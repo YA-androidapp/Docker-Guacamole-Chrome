@@ -1,0 +1,65 @@
+# Copyright (c) 2020 YA-androidapp(https://github.com/YA-androidapp) All rights reserved.
+version: "3"
+services:
+  postgres:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      PGDATA: /var/lib/postgresql/data/guacamole
+      POSTGRES_DB: guacdb
+      POSTGRES_PASSWORD: guacpw
+      POSTGRES_USER: guacuser
+    volumes:
+      - ./pg/init:/docker-entrypoint-initdb.d
+      - ./pg/data:/var/lib/postgresql/data
+    networks:
+      - guacamole_network
+
+  guacd:
+    image: guacamole/guacd:latest
+    restart: unless-stopped
+    volumes:
+      - ./d/ipag.ttf:/usr/share/fonts/ipag.ttf:ro
+      - ./d/log:/var/log/guacamole/
+    networks:
+      - guacamole_network
+
+  guacamole:
+    image: guacamole/guacamole:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      GUACD_HOSTNAME: guacd
+      POSTGRES_DATABASE: guacdb
+      POSTGRES_HOSTNAME: postgres
+      POSTGRES_PASSWORD: guacpw
+      POSTGRES_USER: guacuser
+      GUACAMOLE_HOME: /etc/guacamole
+    volumes:
+      - ./g:/etc/guacamole
+    depends_on:
+      - postgres
+      - guacd
+    networks:
+      - guacamole_network
+
+  nginx:
+    image: nginx:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - guacamole_network
+
+  chrome:
+    image: siomiz/chrome
+    restart: unless-stopped
+    networks:
+      - guacamole_network
+
+networks:
+  guacamole_network:
+    driver: bridge
