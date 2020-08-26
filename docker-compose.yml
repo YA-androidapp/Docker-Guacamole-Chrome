@@ -1,6 +1,22 @@
 # Copyright (c) 2020 YA-androidapp(https://github.com/YA-androidapp) All rights reserved.
 version: "3"
 services:
+  https-portal:
+    image: steveltn/https-portal:1
+    ports:
+      - "80:80"
+      - "443:443"
+    links:
+      - guacamole
+    restart: unless-stopped
+    environment:
+      DOMAINS: "example.net -> http://guacamole:8080"
+      # STAGE: "staging"
+      STAGE: "production"
+      # FORCE_RENEW: 'true'
+    networks:
+      - guacamole_network
+
   postgres:
     image: postgres:latest
     restart: unless-stopped
@@ -41,16 +57,6 @@ services:
     depends_on:
       - postgres
       - guacd
-    networks:
-      - guacamole_network
-
-  nginx:
-    image: nginx:latest
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
     networks:
       - guacamole_network
 
